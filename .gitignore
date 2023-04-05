@@ -1,0 +1,6 @@
+.vs/
+src/glad.c
+textures/
+x64/
+*.vcxproj.user
+*.vcxproj.filters
