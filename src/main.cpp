@@ -3,10 +3,8 @@
 #include <stb_image.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <filesystem>
 #include <iostream>
 #include <Windows.h>
 
@@ -43,6 +41,7 @@ float lastY = SCREEN_HEIGHT / 2.0f;
 const float ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT; 
 const float NEAR_DISTANCE = 1.0f; 
 const float FAR_DISTANCE = 100.0f;
+
 Camera camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 // whenever the window is resized by OS or the user this function is called
@@ -128,91 +127,83 @@ int main() {
 
 	// create shaders
 	// ----------------
-	Shader shaders[] = {
-		Shader(getLocalFilepath("/shaders/default.vert").c_str(), getLocalFilepath("/shaders/default.frag").c_str())
-	};
+	Shader colorShader(getLocalFilepath("/shaders/color.vert").c_str(), getLocalFilepath("/shaders/color.frag").c_str());
+	Shader lightCubeShader(getLocalFilepath("/shaders/lightCube.vert").c_str(), getLocalFilepath("/shaders/lightCube.frag").c_str());
 
 	// Setup vertex data and buffers and configure vertex attributes
 	// -----------------------------------------------------------------------------------------------
 
 	// cube
 	float vertices[] = {
-		// position (x,y,z)     // texture coords (s,t)
-		-0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,    1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
+		// position (x,y,z)    
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
 
-		-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,    0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
 
-		-0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
 
-		 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
 
-		-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,    1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f, -0.5f, 
 
-		-0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,    0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,    0.0f, 1.0f
+		-0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f, -0.5f
 	};
 
-	glm::vec3 cubePositions[] = {
-		glm::vec3( 0.0f,  0.0f,   0.0f),
-		glm::vec3( 2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f,  -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3( 2.4f, -0.4f,  -3.5f),
-		glm::vec3(-1.7f,  3.0f,  -7.5f),
-		glm::vec3( 1.3f, -2.0f,  -2.5f),
-		glm::vec3( 1.5f,  2.0f,  -2.5f),
-		glm::vec3( 1.5f,  0.2f,  -1.5f),
-		glm::vec3(-1.3f,  1.0f,  -1.5f)
-	};
-
-	// create VAO, which will store VBO that is populated with vertex data
+	// Create container object
+	// -----------------------------------------------------------------------------------------------
 	unsigned int VAO, VBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 
-	// bind VAO before editing the VBO
 	glBindVertexArray(VAO);
-
-	// add vertics to VBO
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); 
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); 
 	glEnableVertexAttribArray(0);
 
-	// texture coordinate attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	// Create light object
+	// -----------------------------------------------------------------------------------------------
+	unsigned int lightVAO;
+	glGenVertexArrays(1, &lightVAO);
+
+	glBindVertexArray(lightVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 
 	// Load and create textures
 	// -----------------------------------------------------------------------------------------------
@@ -268,9 +259,9 @@ int main() {
 	stbi_image_free(data);
 
 	// Set texture units
-	glUseProgram(shaders[0].ID);
-	glUniform1i(glGetUniformLocation(shaders[0].ID, "texture0"), 0);
-	glUniform1i(glGetUniformLocation(shaders[0].ID, "texture1"), 1);
+	glUseProgram(colorShader.ID);
+	glUniform1i(glGetUniformLocation(colorShader.ID, "texture0"), 0);
+	glUniform1i(glGetUniformLocation(colorShader.ID, "texture1"), 1);
 
 	// Render Loop
 	while (!glfwWindowShouldClose(window)) {
@@ -286,31 +277,35 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// bind textures
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textures[0]);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-		glUseProgram(shaders[0].ID);
+		// set uniforms for color shader
+		glUseProgram(colorShader.ID);
+		glUniform3f(glGetUniformLocation(colorShader.ID, "objectColor"), 1.0f, 0.5f, 0.31f);
+		glUniform3f(glGetUniformLocation(colorShader.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
 
 		glm::mat4 projection = glm::perspective(camera.Zoom, ASPECT_RATIO, NEAR_DISTANCE, FAR_DISTANCE);
-		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
 		glm::mat4 view = camera.GetViewMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(colorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(colorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-		// render boxes
-		for (unsigned int i = 0; i < 10; i++)
-		{
-			float angle = 20.0f * i;
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		// Draw cube
+		glm::mat4 model = glm::mat4(1.0f);
+		glUniformMatrix4fv(glGetUniformLocation(colorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// Draw light cube
+		glUseProgram(lightCubeShader.ID);
+		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
+		glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
+		model = glm::translate(model, lightPosition);
+		model = glm::scale(model, glm::vec3(0.2f));
+		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		glBindVertexArray(lightVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// swap buffers and poll input events
 		glfwSwapBuffers(window);
@@ -319,8 +314,10 @@ int main() {
 
 	// delete VAOs, VBOs, and shaders
 	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(2, &VBO);
-	glDeleteProgram(shaders[0].ID);
+	glDeleteVertexArrays(1, &lightVAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteProgram(colorShader.ID);
+	glDeleteProgram(lightCubeShader.ID);
 	
 	// terminate GLFWB
 	glfwTerminate();
