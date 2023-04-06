@@ -6,23 +6,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
-#include <Windows.h>
 
 #include <camera.hpp>
 #include <shader.hpp>
-
-// Helper methods to pass local filepaths for shaders/textures
-std::string getCurrentDirectoryOnWindows()
-{
-	const unsigned long maxDir = 260;
-	char currentDir[maxDir];
-	GetCurrentDirectory(maxDir, currentDir);
-	return std::string(currentDir);
-}
-
-std::string getLocalFilepath(std::string value) {
-	return (getCurrentDirectoryOnWindows() + value);
-}
+#include <texture.hpp>
 
 // screen
 const float SCREEN_WIDTH = 800;
@@ -91,7 +78,8 @@ void processInput(GLFWwindow* window) {
 
 int main() {
 
-	// initialize GLFW with OpenGL version and profile
+	// initialize GLFW, OpenGL, and GLAD
+	// -----------------------------------------------------------------------------------------------
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -121,20 +109,21 @@ int main() {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-
-	// enable depth testing
 	glEnable(GL_DEPTH_TEST);
 
-	// create shaders
-	// ----------------
-	Shader colorShader(getLocalFilepath("/shaders/color.vert").c_str(), getLocalFilepath("/shaders/color.frag").c_str());
+	// Load shaders
+	// -----------------------------------------------------------------------------------------------
+	Shader phongShader(getLocalFilepath("/shaders/phong.vert").c_str(), getLocalFilepath("/shaders/phong.frag").c_str());
 	Shader lightCubeShader(getLocalFilepath("/shaders/lightCube.vert").c_str(), getLocalFilepath("/shaders/lightCube.frag").c_str());
+
+	// Load textures
+	// -----------------------------------------------------------------------------------------------
+	Texture texture0(getLocalFilepath("/textures/box.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
+	Texture texture1(getLocalFilepath("/textures/gem.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
 
 	// Setup vertex data and buffers and configure vertex attributes
 	// -----------------------------------------------------------------------------------------------
-
-	// cube
-	float vertices[] = {
+	float cubeVertices[] = {
 		// position (x,y,z)    
 		-0.5f, -0.5f, -0.5f,
 		 0.5f, -0.5f, -0.5f,
@@ -179,148 +168,93 @@ int main() {
 		-0.5f,  0.5f, -0.5f
 	};
 
-	// Create container object
+	// Create shaded cube object
 	// -----------------------------------------------------------------------------------------------
-	unsigned int VAO, VBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
+	unsigned int shadedCubeVAO, shadedCubeVBO;
+	glGenVertexArrays(1, &shadedCubeVAO);
+	glGenBuffers(1, &shadedCubeVBO);
+	glBindVertexArray(shadedCubeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, shadedCubeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// position attribute
+	// position attribute (vec3)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); 
 	glEnableVertexAttribArray(0);
 
-	// Create light object
+	// Create light cube object
 	// -----------------------------------------------------------------------------------------------
-	unsigned int lightVAO;
-	glGenVertexArrays(1, &lightVAO);
+	unsigned int lightCubeVAO;
+	glGenVertexArrays(1, &lightCubeVAO);
+	glBindVertexArray(lightCubeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, shadedCubeVBO);
 
-	glBindVertexArray(lightVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	// position attribute
+	// position attribute (vec3)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	// Load and create textures
-	// -----------------------------------------------------------------------------------------------
-	unsigned int textures[2];
-	glGenTextures(2, textures);
-
-	// texture 1
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
-
-	// Set texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	// Set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// Load image, create texture, and generate mipmaps
-	int width, height, numChannels;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char* data = stbi_load(getLocalFilepath("/textures/box.png").c_str(), &width, &height, &numChannels, 0);
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
-
-	// texture 2
-	// ---------
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-	// Set texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	// Set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// Load image, create texture, and generate mipmaps
-	stbi_set_flip_vertically_on_load(true);
-	data = stbi_load(getLocalFilepath("/textures/gem.png").c_str(), &width, &height, &numChannels, 0);
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
-
-	// Set texture units
-	glUseProgram(colorShader.ID);
-	glUniform1i(glGetUniformLocation(colorShader.ID, "texture0"), 0);
-	glUniform1i(glGetUniformLocation(colorShader.ID, "texture1"), 1);
-
 	// Render Loop
+	// -----------
 	while (!glfwWindowShouldClose(window)) {
 		// Update time
+	    // -----------------------------------------------------------------------------------------------
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// input
+		// Input
+		// -----------------------------------------------------------------------------------------------
 		processInput(window);
 
-		// clear with color, clear depth_buffer_bit for depth testing
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		// Clear color and depth buffer
+		// -----------------------------------------------------------------------------------------------
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// set uniforms for color shader
-		glUseProgram(colorShader.ID);
-		glUniform3f(glGetUniformLocation(colorShader.ID, "objectColor"), 1.0f, 0.5f, 0.31f);
-		glUniform3f(glGetUniformLocation(colorShader.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
+		// Set uniforms for phong shader
+		// -----------------------------------------------------------------------------------------------
+		glUseProgram(phongShader.ID);
+		glUniform3f(glGetUniformLocation(phongShader.ID, "objectColor"), 1.0f, 0.5f, 0.31f);
+		glUniform3f(glGetUniformLocation(phongShader.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
 
+		// Draw shaded cube 
+		// -----------------------------------------------------------------------------------------------
 		glm::mat4 projection = glm::perspective(camera.Zoom, ASPECT_RATIO, NEAR_DISTANCE, FAR_DISTANCE);
 		glm::mat4 view = camera.GetViewMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(colorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(colorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
-		// Draw cube
 		glm::mat4 model = glm::mat4(1.0f);
-		glUniformMatrix4fv(glGetUniformLocation(colorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-		glBindVertexArray(VAO);
+		glBindVertexArray(shadedCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Draw light cube
-		glUseProgram(lightCubeShader.ID);
-		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
+		// -----------------------------------------------------------------------------------------------
 		glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
 		model = glm::translate(model, lightPosition);
 		model = glm::scale(model, glm::vec3(0.2f));
+
+		glUseProgram(lightCubeShader.ID);
+		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-		glBindVertexArray(lightVAO);
+		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		// swap buffers and poll input events
+		// Swap buffers and poll input events
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
-	// delete VAOs, VBOs, and shaders
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteVertexArrays(1, &lightVAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(colorShader.ID);
+	// Delete VAOs, VBOs, and shaders
+	// -----------------------------------------------------------------------------------------------
+	glDeleteVertexArrays(1, &shadedCubeVAO);
+	glDeleteVertexArrays(1, &lightCubeVAO);
+	glDeleteBuffers(1, &shadedCubeVBO);
+	glDeleteProgram(phongShader.ID);
 	glDeleteProgram(lightCubeShader.ID);
 	
-	// terminate GLFWB
 	glfwTerminate();
-
 	return EXIT_SUCCESS;
 }

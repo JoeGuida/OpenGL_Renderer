@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClInclude Include="include\camera.hpp" />
     <ClInclude Include="include\shader.hpp" />
+    <ClInclude Include="include\texture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="textures\awesomeface.png" />
@@ -145,10 +146,11 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
+    <ClCompile Include="src\texture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\color.frag" />
-    <None Include="shaders\color.vert" />
+    <None Include="shaders\phong.frag" />
+    <None Include="shaders\phong.vert" />
     <None Include="shaders\lightCube.frag" />
     <None Include="shaders\lightCube.vert" />
   </ItemGroup>

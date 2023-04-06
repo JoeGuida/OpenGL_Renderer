@@ -1,5 +1,5 @@
-#ifndef RAYCASTER_SHADER_H
-#define RAYCASTER_SHADER_H
+#ifndef OPENGL_RENDERER_SHADER_HPP
+#define OPENGL_RENDERER_SHADER_HPP
 
 #include <glad/glad.h>
 
