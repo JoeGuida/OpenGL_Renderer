@@ -226,6 +226,7 @@ int main() {
 		glUniform3f(glGetUniformLocation(phongShader.ID, "objectColor"), 1.0f, 0.5f, 0.31f);
 		glUniform3f(glGetUniformLocation(phongShader.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
 		glUniform3f(glGetUniformLocation(phongShader.ID, "lightPosition"), lightPosition.x, lightPosition.y, lightPosition.z);
+		glUniform3f(glGetUniformLocation(phongShader.ID, "viewPosition"), camera.Position.x, camera.Position.y, camera.Position.z);
 
 		// Draw shaded cube 
 		// -----------------------------------------------------------------------------------------------
