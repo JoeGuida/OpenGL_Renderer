@@ -52,7 +52,7 @@ int main() {
 	#endif
 
 	// create GLFW window and set callbacks
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Raycaster", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGL Renderer", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -182,37 +182,50 @@ int main() {
 
 		// Set uniforms for phong shader
 		// -----------------------------------------------------------------------------------------------
-		glUseProgram(phongShader.ID);
-		glUniform3f(glGetUniformLocation(phongShader.ID, "objectColor"), 1.0f, 0.5f, 0.31f);
-		glUniform3f(glGetUniformLocation(phongShader.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
-		glUniform3f(glGetUniformLocation(phongShader.ID, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		phongShader.use();
+		phongShader.setVec3("viewPos", camera.Position);
+
+		glm::vec3 lightColor(1.0f, 0.0f, 0.0f);
+		glm::vec3 ambientIntensity = glm::vec3(0.2f, 0.2f, 0.2f);
+		glm::vec3 diffuseIntensity = glm::vec3(0.5f, 0.5f, 0.5f);
+		glm::vec3 specularIntensity = glm::vec3(1.0f, 1.0f, 1.0f);
 
 		lightPosition = glm::vec3(sin(glfwGetTime()), sin(glfwGetTime()), sin(glfwGetTime()));
+		phongShader.setVec3("light.color", lightColor);
+		phongShader.setVec3("light.position", lightPosition);
+		phongShader.setVec3("light.ambient", ambientIntensity);
+		phongShader.setVec3("light.diffuse", diffuseIntensity);
+		phongShader.setVec3("light.specular", specularIntensity);
 
-		glUniform3f(glGetUniformLocation(phongShader.ID, "lightPos"), lightPosition.x, lightPosition.y, lightPosition.z);
+		phongShader.setVec3("material.ambient", 0.0f, 0.5f, 0.0f);
+		phongShader.setVec3("material.diffuse", 0.0f, 0.5f, 0.0f);
+		phongShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		phongShader.setFloat("material.shininess", 32.0f);
 
 		// Draw shaded cube 
 		// -----------------------------------------------------------------------------------------------
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), ASPECT_RATIO, NEAR_DISTANCE, FAR_DISTANCE);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
-		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		phongShader.setMatrix4f("projection", projection);
+		phongShader.setMatrix4f("view", view);
+		phongShader.setMatrix4f("model", model);
 
 		glBindVertexArray(shadedCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Draw light cube
 		// -----------------------------------------------------------------------------------------------
-		glUseProgram(lightCubeShader.ID);
+		lightCubeShader.use();
 
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPosition);
 		model = glm::scale(model, glm::vec3(0.2f));
-		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		lightCubeShader.setMatrix4f("projection", projection);
+		lightCubeShader.setMatrix4f("view", view);
+		lightCubeShader.setMatrix4f("model", model);
 
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
