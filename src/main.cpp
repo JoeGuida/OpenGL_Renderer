@@ -11,6 +11,11 @@
 #include <shader.hpp>
 #include <texture.hpp>
 
+void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn);
+void processInput(GLFWwindow* window);
+void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
+
 // screen
 const float SCREEN_WIDTH = 800;
 const float SCREEN_HEIGHT = 600;
@@ -26,57 +31,12 @@ float lastY = SCREEN_HEIGHT / 2.0f;
 
 // camera
 const float ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT; 
-const float NEAR_DISTANCE = 1.0f; 
+const float NEAR_DISTANCE = 0.1f; 
 const float FAR_DISTANCE = 100.0f;
 Camera camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 // lighting
 glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
-
-// whenever the window is resized by OS or the user this function is called
-void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
-}
-
-// whenever mouse moves this function is called
-void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn) {
-	float xPos = static_cast<float>(xPosIn);
-	float yPos = static_cast<float>(yPosIn);
-
-	if (firstMouse) {
-		lastX = xPos;
-		lastY = yPos;
-		firstMouse = false;
-	}
-
-	float xOffset = xPos - lastX;
-	float yOffset = lastY - yPos;
-
-	lastX = xPos;
-	lastY = yPos;
-
-	camera.ProcessMouseMovement(xOffset, yOffset);
-}
-
-// whenever mouse scroll wheel is moved this function is called
-void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
-	camera.ProcessMouseScroll(static_cast<float>(yOffset));
-}
-
-// queries GLFW for input events
-void processInput(GLFWwindow* window) {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
-}
 
 int main() {
 
@@ -225,12 +185,15 @@ int main() {
 		glUseProgram(phongShader.ID);
 		glUniform3f(glGetUniformLocation(phongShader.ID, "objectColor"), 1.0f, 0.5f, 0.31f);
 		glUniform3f(glGetUniformLocation(phongShader.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
-		glUniform3f(glGetUniformLocation(phongShader.ID, "lightPosition"), lightPosition.x, lightPosition.y, lightPosition.z);
-		glUniform3f(glGetUniformLocation(phongShader.ID, "viewPosition"), camera.Position.x, camera.Position.y, camera.Position.z);
+		glUniform3f(glGetUniformLocation(phongShader.ID, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+
+		lightPosition = glm::vec3(sin(glfwGetTime()), sin(glfwGetTime()), sin(glfwGetTime()));
+
+		glUniform3f(glGetUniformLocation(phongShader.ID, "lightPos"), lightPosition.x, lightPosition.y, lightPosition.z);
 
 		// Draw shaded cube 
 		// -----------------------------------------------------------------------------------------------
-		glm::mat4 projection = glm::perspective(camera.Zoom, ASPECT_RATIO, NEAR_DISTANCE, FAR_DISTANCE);
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), ASPECT_RATIO, NEAR_DISTANCE, FAR_DISTANCE);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 		glUniformMatrix4fv(glGetUniformLocation(phongShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -244,6 +207,7 @@ int main() {
 		// -----------------------------------------------------------------------------------------------
 		glUseProgram(lightCubeShader.ID);
 
+		model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPosition);
 		model = glm::scale(model, glm::vec3(0.2f));
 		glUniformMatrix4fv(glGetUniformLocation(lightCubeShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -268,4 +232,49 @@ int main() {
 	
 	glfwTerminate();
 	return EXIT_SUCCESS;
+}
+
+// whenever the window is resized by OS or the user this function is called
+void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+}
+
+// whenever mouse moves this function is called
+void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn) {
+	float xPos = static_cast<float>(xPosIn);
+	float yPos = static_cast<float>(yPosIn);
+
+	if (firstMouse) {
+		lastX = xPos;
+		lastY = yPos;
+		firstMouse = false;
+	}
+
+	float xOffset = xPos - lastX;
+	float yOffset = lastY - yPos;
+
+	lastX = xPos;
+	lastY = yPos;
+
+	camera.ProcessMouseMovement(xOffset, yOffset);
+}
+
+// queries GLFW for input events
+void processInput(GLFWwindow* window) {
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// whenever mouse scroll wheel is moved this function is called
+void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
+	camera.ProcessMouseScroll(static_cast<float>(yOffset));
 }
