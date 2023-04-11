@@ -80,8 +80,8 @@ int main() {
 
 	// Load textures
 	// -----------------------------------------------------------------------------------------------
-	Texture texture0(getLocalFilepath("/textures/box.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
-	Texture texture1(getLocalFilepath("/textures/gem.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
+	Texture texture0(getLocalFilepath("/textures/container2.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
+	Texture texture1(getLocalFilepath("/textures/container2_specular.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
 
 	// Setup vertex data and buffers and configure vertex attributes
 	// -----------------------------------------------------------------------------------------------
@@ -162,6 +162,10 @@ int main() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
+	// Set texture units
+	glBindTexture(GL_TEXTURE0, texture0.ID);
+	glBindTexture(GL_TEXTURE1, texture1.ID);
+	
 	// Render Loop
 	// -----------
 	while (!glfwWindowShouldClose(window)) {
@@ -177,10 +181,10 @@ int main() {
 
 		// Clear color and depth buffer
 		// -----------------------------------------------------------------------------------------------
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Set uniforms for phong shader
+		// Set values for phong shader
 		// -----------------------------------------------------------------------------------------------
 		phongShader.use();
 		phongShader.setVec3("viewPos", camera.Position);
@@ -190,7 +194,7 @@ int main() {
 		glm::vec3 diffuseIntensity = glm::vec3(0.5f, 0.5f, 0.5f);
 		glm::vec3 specularIntensity = glm::vec3(1.0f, 1.0f, 1.0f);
 
-		lightPosition = glm::vec3(sin(glfwGetTime()), sin(glfwGetTime()), sin(glfwGetTime()));
+		lightPosition = glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), -1.0);
 		phongShader.setVec3("light.color", lightColor);
 		phongShader.setVec3("light.position", lightPosition);
 		phongShader.setVec3("light.ambient", ambientIntensity);
