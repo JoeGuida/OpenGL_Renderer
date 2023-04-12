@@ -17,8 +17,8 @@ void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 // screen
-const float SCREEN_WIDTH = 800;
-const float SCREEN_HEIGHT = 600;
+const float SCREEN_WIDTH = 1920;
+const float SCREEN_HEIGHT = 1080;
 
 // time
 float deltaTime = 0.0f;
@@ -34,9 +34,6 @@ const float ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT;
 const float NEAR_DISTANCE = 0.1f; 
 const float FAR_DISTANCE = 100.0f;
 Camera camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f));
-
-// lighting
-glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
 
 int main() {
 
@@ -80,8 +77,8 @@ int main() {
 
 	// Load textures
 	// -----------------------------------------------------------------------------------------------
-	Texture texture0(getLocalFilepath("/textures/container2.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
-	Texture texture1(getLocalFilepath("/textures/container2_specular.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
+	Texture diffuseMap(getLocalFilepath("/textures/container2.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
+	Texture specularMap(getLocalFilepath("/textures/container2_specular.png").c_str(), TEXTURE_2D, RGBA, REPEAT, LINEAR_MIPMAP_LINEAR, LINEAR, true);
 
 	// Setup vertex data and buffers and configure vertex attributes
 	// -----------------------------------------------------------------------------------------------
@@ -130,6 +127,19 @@ int main() {
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f
 	};
 
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(2.0f, 5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f, 3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f, 2.0f, -2.5f),
+		glm::vec3(1.5f, 0.2f, -1.5f),
+		glm::vec3(-1.3f, 1.0f, -1.5f)
+	};
+
 	// Create shaded cube object
 	// -----------------------------------------------------------------------------------------------
 	unsigned int shadedCubeVAO, shadedCubeVBO;
@@ -163,9 +173,26 @@ int main() {
 	glEnableVertexAttribArray(0);
 
 	// Set texture units
-	glBindTexture(GL_TEXTURE0, texture0.ID);
-	glBindTexture(GL_TEXTURE1, texture1.ID);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuseMap.ID);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, specularMap.ID);
 	
+	// Set light positions and colors
+	glm::vec3 pointLightPositions[] = {
+		glm::vec3(0.7f, 0.2f, 2.0f),
+		glm::vec3(2.3f, -3.3f, -4.0f),
+		glm::vec3(-4.0f, 2.0f, -12.0f),
+		glm::vec3(0.0f, 0.0f, -3.0f)
+	};
+
+	glm::vec3 pointLightColors[] = {
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(1.0f, 1.0f, 0.0f)
+	};
+
 	// Render Loop
 	// -----------
 	while (!glfwWindowShouldClose(window)) {
@@ -181,58 +208,107 @@ int main() {
 
 		// Clear color and depth buffer
 		// -----------------------------------------------------------------------------------------------
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(0.0f, 0.2f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Set values for phong shader
-		// -----------------------------------------------------------------------------------------------
-		phongShader.use();
-		phongShader.setVec3("viewPos", camera.Position);
-
-		glm::vec3 lightColor(1.0f, 0.0f, 0.0f);
-		glm::vec3 ambientIntensity = glm::vec3(0.2f, 0.2f, 0.2f);
-		glm::vec3 diffuseIntensity = glm::vec3(0.5f, 0.5f, 0.5f);
-		glm::vec3 specularIntensity = glm::vec3(1.0f, 1.0f, 1.0f);
-
-		lightPosition = glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), -1.0);
-		phongShader.setVec3("light.color", lightColor);
-		phongShader.setVec3("light.position", lightPosition);
-		phongShader.setVec3("light.ambient", ambientIntensity);
-		phongShader.setVec3("light.diffuse", diffuseIntensity);
-		phongShader.setVec3("light.specular", specularIntensity);
-
-		phongShader.setVec3("material.ambient", 0.0f, 0.5f, 0.0f);
-		phongShader.setVec3("material.diffuse", 0.0f, 0.5f, 0.0f);
-		phongShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-		phongShader.setFloat("material.shininess", 32.0f);
-
-		// Draw shaded cube 
-		// -----------------------------------------------------------------------------------------------
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), ASPECT_RATIO, NEAR_DISTANCE, FAR_DISTANCE);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 
+		// shaded cube material
+		phongShader.setInt("material.diffuse", 0);
+		phongShader.setInt("material.specular", 1);
+		phongShader.setFloat("material.shininess", 32.0f);
+
+		// directional light
+		phongShader.setVec3("directionalLight.direction", -0.2f, -1.0f, -0.3f);
+		phongShader.setVec3("directionalLight.ambient", 0.05f, 0.05f, 0.05f);
+		phongShader.setVec3("directionalLight.diffuse", 0.4f, 0.4f, 0.4f);
+		phongShader.setVec3("directionalLight.specular", 0.5f, 0.5f, 0.5f);
+
+		// point light 1
+		phongShader.setVec3("pointLights[0].position", pointLightPositions[0]);
+		phongShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+		phongShader.setVec3("pointLights[0].diffuse", 1.0f, 0.0f, 0.0f);
+		phongShader.setVec3("pointLights[0].specular", 1.0f, 0.0f, 0.0f);
+		phongShader.setFloat("pointLights[0].constant", 1.0f);
+		phongShader.setFloat("pointLights[0].linear", 0.09f);
+		phongShader.setFloat("pointLights[0].quadratic", 0.032f);
+
+		// point light 2
+		phongShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+		phongShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+		phongShader.setVec3("pointLights[1].diffuse", 0.0f, 1.0f, 0.0f);
+		phongShader.setVec3("pointLights[1].specular", 0.0f, 1.0f, 0.0f);
+		phongShader.setFloat("pointLights[1].constant", 1.0f);
+		phongShader.setFloat("pointLights[1].linear", 0.09f);
+		phongShader.setFloat("pointLights[1].quadratic", 0.032f);
+
+		// point light 3
+		phongShader.setVec3("pointLights[2].position", pointLightPositions[2]);
+		phongShader.setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
+		phongShader.setVec3("pointLights[2].diffuse", 0.0f, 0.0f, 1.0f);
+		phongShader.setVec3("pointLights[2].specular", 0.0f, 0.0f, 1.0f);
+		phongShader.setFloat("pointLights[2].constant", 1.0f);
+		phongShader.setFloat("pointLights[2].linear", 0.09f);
+		phongShader.setFloat("pointLights[2].quadratic", 0.032f);
+
+		// point light 4
+		phongShader.setVec3("pointLights[3].position", pointLightPositions[3]);
+		phongShader.setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
+		phongShader.setVec3("pointLights[3].diffuse", 1.0f, 1.0f, 0.0f);
+		phongShader.setVec3("pointLights[3].specular", 1.0f, 1.0f, 0.0f);
+		phongShader.setFloat("pointLights[3].constant", 1.0f);
+		phongShader.setFloat("pointLights[3].linear", 0.09f);
+		phongShader.setFloat("pointLights[3].quadratic", 0.032f);
+
+		// spotLight
+		phongShader.setVec3("spotLight.position", camera.Position);
+		phongShader.setVec3("spotLight.direction", camera.Front);
+		phongShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+		phongShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+		phongShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+		phongShader.setFloat("spotLight.constant", 1.0f);
+		phongShader.setFloat("spotLight.linear", 0.09f);
+		phongShader.setFloat("spotLight.quadratic", 0.032f);
+		phongShader.setFloat("spotLight.innerCutoff", glm::cos(glm::radians(12.5f)));
+		phongShader.setFloat("spotLight.outerCutoff", glm::cos(glm::radians(15.0f)));
+
+		// Draw shaded cubes
+		// -----------------------------------------------------------------------------------------------
+		phongShader.use();
+		phongShader.setVec3("viewPos", camera.Position);
 		phongShader.setMatrix4f("projection", projection);
 		phongShader.setMatrix4f("view", view);
-		phongShader.setMatrix4f("model", model);
 
 		glBindVertexArray(shadedCubeVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle),
+				glm::vec3(1.0f, 0.3f, 0.5f));
+			phongShader.setMatrix4f("model", model);
 
-		// Draw light cube
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
+		// Draw light cubes
 		// -----------------------------------------------------------------------------------------------
 		lightCubeShader.use();
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, lightPosition);
-		model = glm::scale(model, glm::vec3(0.2f));
-
 		lightCubeShader.setMatrix4f("projection", projection);
 		lightCubeShader.setMatrix4f("view", view);
-		lightCubeShader.setMatrix4f("model", model);
 
 		glBindVertexArray(lightCubeVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (int i = 0; i < (sizeof(pointLightPositions) / sizeof(pointLightPositions[0])); i++) {
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, pointLightPositions[i]);
+			model = glm::scale(model, glm::vec3(0.2f));
+			lightCubeShader.setMatrix4f("model", model);
+			lightCubeShader.setVec3("diffuse", pointLightColors[i]);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		// Swap buffers and poll input events
 		glfwSwapBuffers(window);

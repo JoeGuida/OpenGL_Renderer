@@ -17,6 +17,7 @@ public:
 
 	Shader(const std::string& vertexPath, const std::string& fragmentPath);
 	void setFloat(const char* uniformName, float value);
+	void setInt(const char* uniformName, int value);
 	void setMatrix4f(const char* uniformName, const glm::mat4& value);
 	void setVec3(const char* uniformName, const glm::vec3& value);
 	void setVec3(const char* uniformName, float x, float y, float z);

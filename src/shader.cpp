@@ -81,6 +81,11 @@ void Shader::setFloat(const char* uniformName, float value) {
 	glUniform1f(glGetUniformLocation(ID, uniformName), value);
 }
 
+void Shader::setInt(const char* uniformName, int value) {
+	use();
+	glUniform1i(glGetUniformLocation(ID, uniformName), value);
+}
+
 void Shader::setMatrix4f(const char* uniformName, const glm::mat4& value) {
 	use();
 	glUniformMatrix4fv(glGetUniformLocation(ID, uniformName), 1, GL_FALSE, glm::value_ptr(value));
