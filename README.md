@@ -6,6 +6,7 @@ TODO
 
 # Technologies Used
 - C++
+- Assimp
 - GLAD
 - GLFW
 - GLM
