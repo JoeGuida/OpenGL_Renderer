@@ -2,6 +2,7 @@
 A hardware renderer using OpenGL 3.3
 
 # Screenshots / Videos
+TODO
 
 # Technologies Used
 - C++
