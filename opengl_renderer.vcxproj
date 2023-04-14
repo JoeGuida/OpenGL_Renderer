@@ -74,6 +74,10 @@
     <IncludePath>C:\Users\Joe\source\repos\opengl_renderer\include;C:\opengl\include\glm;C:\opengl\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\opengl\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\opengl\include\glm;C:\opengl\include;C:\Users\Joe\source\repos\opengl_renderer\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\opengl\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -130,12 +134,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\camera.hpp" />
+    <ClInclude Include="include\mesh.hpp" />
+    <ClInclude Include="include\model.hpp" />
     <ClInclude Include="include\shader.hpp" />
-    <ClInclude Include="include\texture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="textures\awesomeface.png" />
@@ -144,11 +150,14 @@
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\mesh.cpp" />
+    <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
-    <ClCompile Include="src\texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\default.frag" />
+    <None Include="shaders\default.vert" />
     <None Include="shaders\phong.frag" />
     <None Include="shaders\phong.vert" />
     <None Include="shaders\lightCube.frag" />

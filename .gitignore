@@ -1,6 +1,7 @@
 .vs/
 src/glad.c
 textures/
+models/
 x64/
 *.vcxproj.user
 *.vcxproj.filters
