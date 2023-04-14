@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <camera.hpp>
+#include <filesystem.hpp>
 #include <model.hpp>
 #include <shader.hpp>
 
@@ -74,11 +75,11 @@ int main() {
 
 	// Shaders
 	// ---------------------------------------------------------------------------------------------------
-	Shader shader("C:/Users/Joe/source/repos/opengl_renderer/shaders/phong.vert", "C:/Users/Joe/source/repos/opengl_renderer/shaders/phong.frag");
+	Shader shader(FileSystem::GetPath("/shaders/default.vert"), FileSystem::GetPath("/shaders/default.frag"));
 
 	// Define Objects
 	// ---------------------------------------------------------------------------------------------------
-	Model backpack("C:/Users/Joe/source/repos/opengl_renderer/models/backpack/backpack.obj");
+	Model backpack(FileSystem::GetPath("/models/backpack/backpack.obj"));
 
 	// Render
 	// ---------------------------------------------------------------------------------------------------
