@@ -23,3 +23,7 @@ TODO
 - Textures (texture loading, texture filtering, mipmaps)
 - Lighting systems (point lights with faloff, directional lights, spot lights)
 - Model loaading
+
+# Example Demo
+Here is a simple lighting demo I made using the renderer
+![OpenGL Renderer Lighting Demo](./img/simple_lighting_demo.gif)
